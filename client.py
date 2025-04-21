@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
+import sys
+import uvicorn
+
 
 load_dotenv()  # load environment variables from .env
 
@@ -141,21 +144,20 @@ class MCPClient:
         """Clean up resources"""
         await self.exit_stack.aclose()
 
-async def main():
-    if len(sys.argv) < 2:
-        print("Usage: python client.py <path_to_server_script>")
-        sys.exit(1)
+# async def main():
+#     if len(sys.argv) < 2:
+#         print("Usage: python client.py <path_to_server_script>")
+#         sys.exit(1)
 
-    client = MCPClient()
-    try:
-        await client.connect_to_server(sys.argv[1])
-        await client.chat_loop()
-    finally:
-        await client.cleanup()
+#     client = MCPClient()
+#     try:
+#         await client.connect_to_server(sys.argv[1])
+#         await client.chat_loop()
+#     finally:
+#         await client.cleanup()
 
 #if __name__ == "__main__":
-import sys
-import uvicorn
+
     #asyncio.run(main())
 
 class QueryRequest(BaseModel):
