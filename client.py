@@ -8,6 +8,10 @@ from mcp.client.stdio import stdio_client
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from contextlib import asynccontextmanager
+
 load_dotenv()  # load environment variables from .env
 
 class MCPClient:
@@ -149,6 +153,47 @@ async def main():
     finally:
         await client.cleanup()
 
+#if __name__ == "__main__":
+import sys
+import uvicorn
+    #asyncio.run(main())
+
+class QueryRequest(BaseModel):
+    query: str
+
+class QueryResponse(BaseModel):
+    response: str
+
+client = MCPClient()
+
+# @app.on_event("startup")
+# async def startup_event():
+#     if len(sys.argv) < 2:
+#         raise RuntimeError("Usage: python client.py <path_to_server_script>")
+#     await client.connect_to_server(sys.argv[1])
+
+
+# @app.on_event("shutdown")
+# async def shutdown_event():
+#     await client.cleanup()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize the client and connect to the server
+    await client.connect_to_server(sys.argv[1])
+    yield
+    # Cleanup on shutdown
+    await client.cleanup()
+
+app = FastAPI(lifespan=lifespan)
+
+@app.post("/query", response_model=QueryResponse)
+async def process_query(request: QueryRequest):
+    try:
+        response = await client.process_query(request.query)
+        return QueryResponse(response=response)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 if __name__ == "__main__":
-    import sys
-    asyncio.run(main())
+    uvicorn.run(app, host="0.0.0.0", port=8000)
